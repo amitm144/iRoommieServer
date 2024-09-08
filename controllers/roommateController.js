@@ -1,327 +1,3 @@
-// const Roommate = require("../models/roommateModel");
-// const Apartment = require("../models/apartmentModel");
-// const Question = require("../models/questionModel");
-// const calculateCompatibilityScore = require("../utils/matchingAlgorithm");
-
-// exports.getMatches = async (req, res) => {
-//   try {
-//     if (!req.session.profile) {
-//       return res.status(401).json({ message: "Unauthorized" });
-//     }
-
-//     const roommateId = req.session.profile;
-//     const roommate = await Roommate.findById(roommateId).populate("questionnaire");
-
-//     if (!roommate) {
-//       return res.status(404).json({ message: "Roommate profile not found" });
-//     }
-
-//     const matches = await Promise.all(roommate.matches.map((matchId) =>
-//       Apartment.findById(matchId).populate("questionnaire")
-//     ));
-
-//     const rvMatches = matches
-//       .map((match) => {
-//         let compatibilityScore = 0;
-//         let distance = 0;
-
-//         try {
-//           compatibilityScore = calculateCompatibilityScore(
-//             roommate.questionnaire,
-//             match.questionnaire
-//           );
-
-//           if (roommate.preferences?.location?.address?.coordinates && match.info?.location?.coordinates) {
-//             distance = calculateDistance(
-//               roommate.preferences.location.address.coordinates,
-//               match.info.location.coordinates
-//             );
-//           }
-//         } catch (error) {
-//           console.error("Error calculating scores:", error);
-//         }
-
-//         return {
-//           match,
-//           matchInfo: {
-//             image: match.info?.images[0],
-//             score: compatibilityScore,
-//             title : match.info?.location.address.street + ", "+match.info.location.address.city ,
-//             subTitle: match.info?.financials?.rent + "₪ /m" || 0,
-//             distance,
-//           },
-//         };
-//       })
-//       .sort((a, b) => b.score - a.score);
-
-//     res.json(rvMatches);
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ message: "Internal server error" });
-//   }
-// };
-// exports.getSuggestions = async (req, res) => {
-//   try {
-//     if (!req.session.profile) {
-//       return res.status(401).json({ message: "Unauthorized" });
-//     }
-//     const roommateId = req.session.profile;
-
-//     // Fetch the roommate's data, including questionnaire and preferences
-//     const roommate = await Roommate.findById(roommateId).populate(
-//       "questionnaire"
-//     );
-//     if (!roommate) {
-//       return res.status(404).json({ message: "Roommate profile not found" });
-//     }
-
-//     // Fetch all apartments
-//     const apartments = await Apartment.find().populate("questionnaire");
-
-//     // Calculate compatibility scores and filter based on preferences
-//     const compatibleApartments = apartments
-//       .map((apartment) => {
-//         // Check if the apartment matches the roommate's preferences
-//         // if (!matchesPreferences(roommate.preferences, apartment)) {
-//         //   console.log("Does not match preferences");
-//         //   return null;
-//         // }
-
-//         // Calculate compatibility score
-//         const compatibilityScore = calculateCompatibilityScore(
-//           roommate.questionnaire,
-//           apartment.questionnaire
-//         );
-
-//         const distance =
-//           calculateDistance(
-//             roommate.preferences?.location.address.coordinates,
-//             apartment.info.location.coordinates
-//           ) || 0;
-
-//         // Return a new object with apartment data and compatibility score
-//         const rv = {
-//           apartment,
-//           score: compatibilityScore,
-//           sortOption: {
-//             score: compatibilityScore,
-//             rent: apartment.info.financials.rent,
-//             distance,
-//             date: apartment.info.leaseTerms.availableFrom,
-//           },
-//         };
-//         return rv;
-//       })
-//       .sort((a, b) => b.score - a.score); // Sort by compatibility score (highest first)
-
-//     res.json(compatibleApartments);
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ message: "Internal server error" });
-//   }
-// }
-
-// exports.updateUser = async (req, res) => {
-//   try {
-//     if (!req.session.profile) {
-//       return res.status(401).json({ message: "Unauthorized" });
-//     }
-
-//     let updatedUser;
-//     const { questionnaire, ...otherFields } = req.body;
-
-//     if (questionnaire) {
-//       const questionnaireId = questionnaire._id;
-//       const updatedQuestionnaire = await Question.findByIdAndUpdate(
-//         questionnaireId,
-//         questionnaire,
-//         { new: true, runValidators: true }
-//       );
-
-//       if (!updatedQuestionnaire) {
-//         return res.status(404).json({ message: "Questionnaire not found" });
-//       }
-
-//       updatedUser = await Roommate.findByIdAndUpdate(
-//         req.session.profile,
-//         { questionnaire: updatedQuestionnaire._id, ...otherFields },
-//         { new: true, runValidators: true }
-//       ).populate('questionnaire');
-//     } else {
-//       updatedUser = await Roommate.findByIdAndUpdate(
-//         req.session.profile,
-//         otherFields,
-//         { new: true, runValidators: true }
-//       ).populate('questionnaire');
-//     }
-
-//     if (!updatedUser) {
-//       return res.status(404).json({ message: "User not found" });
-//     }
-
-//     res.json(updatedUser);
-//   } catch (err) {
-//     console.error(err);
-//     if (err.name === 'ValidationError') {
-//       return res.status(400).json({ message: "Validation error", errors: err.errors });
-//     }
-//     res.status(500).json({ message: "Internal server error" });
-//   }
-// };
-
-// exports.setRoommatePreferences = async (req, res) => {
-//   try {
-//     if (!req.session.profile) {
-//       return res.status(401).json({ message: "Unauthorized" });
-//     }
-//     const roommateId = req.session.profile;
-
-//     const {
-//       overview = undefined,
-//       details = undefined,
-//       leaseDuration = undefined,
-//       location = undefined,
-//     } = req.body;
-
-//     if (leaseDuration) {
-//       leaseDuration.moveInDateStart = new Date(leaseDuration.moveInDateStart);
-//     }
-
-//     console.log(overview, details, location, leaseDuration);
-//     const updatedRoommate = await Roommate.findByIdAndUpdate(
-//       roommateId,
-//       { preferences: { overview, details, location, leaseDuration } },
-//       { new: true, runValidators: true }
-//     );
-//     updatedRoommate.save();
-//     console.log(updatedRoommate);
-
-//     if (!updatedRoommate) {
-//       return res.status(404).json({ message: "Roommate not found" });
-//     }
-
-//     res.status(200).json({
-//       message: "Roommate preferences updated successfully",
-//       roommate: updatedRoommate,
-//     });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ message: "Error updating roommate preferences" });
-//   }
-// };
-
-// exports.roommateActions = async (req, res) => {
-//   try {
-//     const { apartmentId } = req.params;
-//     const { action } = req.query;
-//     const roommateId = req.session.profile;
-
-//     if (!req.session.profile) {
-//       return res.status(401).json({ message: "Unauthorized" });
-//     }
-//     const roommate = await Roommate.findById(roommateId);
-//     if (!roommate) {
-//       return res.status(404).json({ message: "roommate not found" });
-//     }
-
-//     const apartment = await Apartment.findById(apartmentId);
-//     if (!apartment) {
-//       return res.status(404).json({ message: "Apartment not found" });
-//     }
-
-//     switch (action) {
-//       case "like":
-//         if (roommate.likes.includes(apartment._id)) {
-//           return res.status(201).json({ message: "Already liked" });
-//         }
-//         if (roommate.dislikes.includes(apartment._id)) {
-//           roommate.dislikes.pull(apartment._id);
-//         }
-//         roommate.likes.push(apartment._id);
-//         break;
-//       case "dislike":
-//         if (roommate.dislikes.includes(apartment._id)) {
-//           return res.status(400).json({ message: "Already disliked" });
-//         }
-//         if (roommate.likes.includes(apartment._id)) {
-//           roommate.likes.pull(apartment._id);
-//         }
-//         roommate.dislikes.push(apartment._id);
-//         break;
-//       case "unlike":
-//         if (!roommate.likes.includes(apartment._id)) {
-//           return res.status(400).json({ message: "Not liked" });
-//         }
-//         roommate.likes.pull(apartment._id);
-//         break;
-
-//       default:
-//         return res.status(400).json({ message: "Invalid action" });
-//     }
-
-//     await roommate.save();
-//     return res.json({ message: "Action successful" });
-//   } catch (err) {
-//     console.error(err);
-//     return res.status(500).json({ message: "Internal server error" });
-//   }
-// };
-
-// function matchesPreferences(roommatePreferences, apartment) {
-//   // Check if the apartment matches the roommate's preferences
-//   if (
-//     roommatePreferences.rentRange &&
-//     apartment.info.financials.rent > roommatePreferences.rentRange
-//   ) {
-//     return false;
-//   }
-//   if (
-//     roommatePreferences.bedrooms &&
-//     apartment.info.specifications.bedrooms < roommatePreferences.bedrooms
-//   ) {
-//     return false;
-//   }
-//   if (
-//     roommatePreferences.bathrooms &&
-//     apartment.info.specifications.bathrooms < roommatePreferences.bathrooms
-//   ) {
-//     return false;
-//   }
-//   if (
-//     roommatePreferences.minSize &&
-//     apartment.info.specifications.size < roommatePreferences.minSize
-//   ) {
-//     return false;
-//   }
-
-//   // Check location preferences if set
-//   if (roommatePreferences.address && roommatePreferences.radius) {
-//     const distance = calculateDistance(
-//       roommatePreferences.address.coordinates,
-//       apartment.info.location.coordinates
-//     );
-//     if (distance > roommatePreferences.radius) {
-//       return false;
-//     }
-//   }
-
-//   // Check other details preferences
-//   for (const [key, value] of Object.entries(roommatePreferences.details)) {
-//     if (value && !apartment.details[key]) {
-//       return false;
-//     }
-//   }
-
-//   return true;
-// }
-
-// function calculateDistance(coord1, coord2) {
-//   if (!coord1 || !coord2) {
-//     return null;
-//   }
-//   return Math.abs(coord1[0] - coord2[0]) + Math.abs(coord1[1] - coord2[1]);
-// }
-
 const Apartment = require("../models/apartmentModel");
 const Question = require("../models/questionModel");
 const Roommate = require("../models/roommateModel");
@@ -413,9 +89,9 @@ exports.getSuggestions = async (req, res) => {
           !roommate.likes.includes(apartment._id) &&
           !roommate.matches.includes(apartment._id)
       )
-      // .filter((apartment) => {
-      //   matchesPreferences(roommate.preferences, apartment);
-      // })
+      .filter((apartment) => {
+        return matchesPreferences(roommate.preferences, apartment);
+      })
       .map((apartment) => {
         const compatibilityScore = calculateCompatibilityScore(
           roommate.questionnaire,
@@ -582,7 +258,7 @@ exports.roommateActions = async (req, res) => {
     }
 
     await roommate.save();
-    return res.json({ message: "Action successful" });
+    return res.json({ message: "Action successful", removedId: targetId });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Internal server error" });
@@ -597,49 +273,60 @@ function calculateDistance(coord1, coord2) {
 }
 
 function matchesPreferences(roommatePreferences, apartment) {
-  // Check if the apartment matches the roommate's preferences
-  if (
-    roommatePreferences.rentRange &&
-    apartment.info.financials.rent > roommatePreferences.rentRange
-  ) {
-    return false;
-  }
-  if (
-    roommatePreferences.bedrooms &&
-    apartment.info.specifications.bedrooms < roommatePreferences.bedrooms
-  ) {
-    return false;
-  }
-  if (
-    roommatePreferences.bathrooms &&
-    apartment.info.specifications.bathrooms < roommatePreferences.bathrooms
-  ) {
-    return false;
-  }
-  if (
-    roommatePreferences.minSize &&
-    apartment.info.specifications.size < roommatePreferences.minSize
-  ) {
-    return false;
+  if (roommatePreferences.overview) {
+    const { rentRange, bedrooms, bathrooms, minSize } = roommatePreferences.overview;
+    
+    if (rentRange && apartment.info.financials.rent > rentRange) {
+      console.log("rentRange");
+      return false;
+    }
+    if (bedrooms && apartment.info.specifications.bedrooms < bedrooms) {
+      console.log("bedrooms");
+      return false;
+    }
+    if (bathrooms && apartment.info.specifications.bathrooms < bathrooms) {
+      console.log("bedrooms");
+      return false;
+    }
+    if (minSize && apartment.info.specifications.size < minSize) {
+      console.log("bedrooms");
+      return false;
+    }
   }
 
-  // Check location preferences if set
-  if (roommatePreferences.address && roommatePreferences.radius) {
+  if (roommatePreferences.details) {
+    for (const [key, value] of Object.entries(roommatePreferences.details)) {
+      if (value === true && apartment.details[key] !== true) {
+        console.log(key);
+        return false;
+      }
+    }
+  }
+
+  if (roommatePreferences.leaseDuration) {
+    const { duration, moveInDateStart } = roommatePreferences.leaseDuration;
+    
+    if (duration && apartment.info.leaseTerms.duration < duration) {
+      console.log("duration");
+      return false;
+    }
+    if (moveInDateStart && new Date(apartment.info.leaseTerms.availableFrom) > new Date(moveInDateStart)) {
+      console.log("moveInDateStart");
+      return false;
+    }
+  }
+
+  if (roommatePreferences.location && roommatePreferences.location.address && roommatePreferences.location.radius) {
     const distance = calculateDistance(
-      roommatePreferences.address.coordinates,
+      roommatePreferences.location.address.coordinates,
       apartment.info.location.coordinates
     );
-    if (distance > roommatePreferences.radius) {
+    if (distance > roommatePreferences.location.radius) {
+      console.log("distance");
       return false;
     }
   }
 
-  // Check other details preferences
-  for (const [key, value] of Object.entries(roommatePreferences.details)) {
-    if (value && !apartment.details[key]) {
-      return false;
-    }
-  }
-
+  console.log("true");
   return true;
 }

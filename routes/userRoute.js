@@ -10,7 +10,7 @@ const {
   checkUserType
 } = require("../controllers/userController");
 
-// Apply the checkUserType middleware to all routes
+// Applying the checkUserType middleware to all routes
 router.use(checkUserType);
 
 // GET routes
@@ -24,3 +24,6 @@ router.put("/preferences", setPreferences);
 router.put("/action/:targetId", setAction);
 
 module.exports = router;
+
+
+
