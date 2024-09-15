@@ -194,11 +194,6 @@ exports.setRoommatePreferences = async (req, res) => {
   if (leaseDuration && leaseDuration.moveInDateStart) {
     leaseDuration.moveInDateStart = new Date(leaseDuration.moveInDateStart);
   }
-  
-  console.log(overview);
-  console.log(details);
-  console.log(location);
-  console.log(leaseDuration);
 
     const updatedRoommate = await Roommate.findByIdAndUpdate(
       roommateId,
@@ -225,7 +220,6 @@ exports.roommateActions = async (req, res) => {
     const { targetId } = req.params;
     const { action } = req.query;
     const roommate = req.user;
-    console.log(targetId, action);
 
     const apartment = await Apartment.findById(targetId);
     if (!apartment) {
@@ -235,7 +229,6 @@ exports.roommateActions = async (req, res) => {
     switch (action) {
       case "like":
         if (!roommate.likes.includes(apartment._id)) {
-          console.log("like");
           roommate.likes.push(apartment._id);
           roommate.dislikes = roommate.dislikes.filter(
             (id) => !id.equals(apartment._id)
@@ -244,7 +237,6 @@ exports.roommateActions = async (req, res) => {
         break;
       case "dislike":
         if (!roommate.dislikes.includes(apartment._id)) {
-          console.log("dislike");
           roommate.dislikes.push(apartment._id);
           roommate.likes = roommate.likes.filter(
             (id) => !id.equals(apartment._id)
@@ -253,7 +245,6 @@ exports.roommateActions = async (req, res) => {
         break;
 
       default:
-        console.log("Invalid action");
         return res.status(400).json({ message: "Invalid action" });
     }
 
@@ -277,19 +268,15 @@ function matchesPreferences(roommatePreferences, apartment) {
     const { rentRange, bedrooms, bathrooms, minSize } = roommatePreferences.overview;
     
     if (rentRange && apartment.info.financials.rent > rentRange) {
-      console.log("rentRange");
       return false;
     }
     if (bedrooms && apartment.info.specifications.bedrooms < bedrooms) {
-      console.log("bedrooms");
       return false;
     }
     if (bathrooms && apartment.info.specifications.bathrooms < bathrooms) {
-      console.log("bedrooms");
       return false;
     }
     if (minSize && apartment.info.specifications.size < minSize) {
-      console.log("bedrooms");
       return false;
     }
   }
@@ -297,7 +284,6 @@ function matchesPreferences(roommatePreferences, apartment) {
   if (roommatePreferences.details) {
     for (const [key, value] of Object.entries(roommatePreferences.details)) {
       if (value === true && apartment.details[key] !== true) {
-        console.log(key);
         return false;
       }
     }
@@ -307,11 +293,9 @@ function matchesPreferences(roommatePreferences, apartment) {
     const { duration, moveInDateStart } = roommatePreferences.leaseDuration;
     
     if (duration && apartment.info.leaseTerms.duration < duration) {
-      console.log("duration");
       return false;
     }
     if (moveInDateStart && new Date(apartment.info.leaseTerms.availableFrom) > new Date(moveInDateStart)) {
-      console.log("moveInDateStart");
       return false;
     }
   }
@@ -322,11 +306,8 @@ function matchesPreferences(roommatePreferences, apartment) {
       apartment.info.location.coordinates
     );
     if (distance > roommatePreferences.location.radius) {
-      console.log("distance");
       return false;
     }
   }
-
-  console.log("true");
   return true;
 }

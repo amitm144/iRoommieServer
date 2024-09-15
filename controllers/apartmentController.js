@@ -173,7 +173,6 @@ exports.apartmentActions = async (req, res) => {
     const { targetId } = req.params;
     const { action } = req.query;
     const myApartment = req.user;
-    console.log(targetId, action);
 
     const roommate = await Roommate.findById(targetId);
     if (!roommate) {
@@ -183,7 +182,6 @@ exports.apartmentActions = async (req, res) => {
     switch (action) {
       case "like":
         if (!myApartment.likes.includes(roommate._id)) {
-          console.log("like");
           myApartment.likes.push(roommate._id);
           myApartment.dislikes = myApartment.dislikes.filter(
             (id) => !id.equals(roommate._id)
@@ -192,7 +190,6 @@ exports.apartmentActions = async (req, res) => {
         break;
       case "dislike":
         if (!myApartment.dislikes.includes(roommate._id)) {
-          console.log("dislike");
           myApartment.dislikes.push(roommate._id);
           myApartment.likes = myApartment.likes.filter(
             (id) => !id.equals(roommate._id)
@@ -201,7 +198,6 @@ exports.apartmentActions = async (req, res) => {
         break;
 
       default:
-        console.log("Invalid action");
         return res.status(400).json({ message: "Invalid action" });
     }
 

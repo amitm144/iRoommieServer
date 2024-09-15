@@ -112,8 +112,6 @@ exports.completeRoommateRegistration = async (req, res) => {
 exports.completeApartmentRegistration = async (req, res) => {
   try {
     const { questionnaireAnswers, info, amenities, details } = req.body;
-
-    console.log(req.session.userRegitration);
     const {
       fullName = "user",
       email,

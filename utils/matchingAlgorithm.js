@@ -1,7 +1,6 @@
 const math = require('mathjs');
 
 function calculateCompatibilityScore(userQuestions, candidateQuestions) {
-  // console.log("candidateQuestions",candidateQuestions);
   const characteristics = [
     'smokingFrequency',
     'cleanlinessLevel',

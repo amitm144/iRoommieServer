@@ -21,7 +21,6 @@ mongoose.connect(process.env.MONGODB_URI);
 const db = mongoose.connection;
 db.on("error", console.error.bind(console, "connection error:"));
 db.once("open", () => {
-    console.log('DataBase connected')
 })
 
 // Session configuration
@@ -55,13 +54,11 @@ app.use('/', routes);
 
 // Add a catch-all route for debugging
 app.use('*', (req, res) => {
-  console.log(`Received request for ${req.originalUrl}`);
   res.status(404).send('Route not found');
 });
 
 // Start the server
 const port = process.env.PORT || 3001;
 app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
 });
 
