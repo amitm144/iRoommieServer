@@ -6,6 +6,24 @@ const calculateCompatibilityScore = require("../utils/matchingAlgorithm");
 exports.getMatches = async (req, res) => {
   try {
     const myApartment = req.user;
+
+    // Use Promise.all to wait for all async operations to complete
+    await Promise.all(myApartment.likes.map(async (like_id) => {
+      const roommate = await Roommate.findById(like_id);
+      if (roommate && roommate.likes.includes(myApartment._id)) {
+        if (!myApartment.matches.includes(like_id)) {
+          myApartment.matches.push(like_id);
+        }
+        if (!roommate.matches.includes(myApartment._id)) {
+          roommate.matches.push(myApartment._id);
+          await roommate.save();
+        }
+      }
+    }));
+
+    // Save myApartment after updating matches
+    await myApartment.save();
+
     const matches = await Promise.all(
       myApartment.matches.map((matchId) =>
         Roommate.findById(matchId).populate("questionnaire")
@@ -13,6 +31,7 @@ exports.getMatches = async (req, res) => {
     );
 
     const formattedMatches = matches
+      .filter(Boolean) // Remove any null values in case a match wasn't found
       .map((match) => {
         const compatibilityScore = calculateCompatibilityScore(
           myApartment.questionnaire,
@@ -22,10 +41,10 @@ exports.getMatches = async (req, res) => {
         return {
           match,
           matchInfo: {
-            image: match.profilePicture,
+            image: match.social.profileImage,
             score: compatibilityScore,
-            title: match.name,
-            subTitle: `${match.age} years old`,
+            title: `${match.personalInfo.name} (${match.personalInfo.age})`,
+            subTitle: `${match.personalInfo.occupation}`,
           },
         };
       })
@@ -37,7 +56,6 @@ exports.getMatches = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
-
 exports.getActivity = async (req, res) => {
   try {
     const myApartment = req.user;

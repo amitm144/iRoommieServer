@@ -3,9 +3,68 @@ const Question = require("../models/questionModel");
 const Roommate = require("../models/roommateModel");
 const calculateCompatibilityScore = require("../utils/matchingAlgorithm");
 
+// exports.getMatches = async (req, res) => {
+//   try {
+//     const roommate = req.user;
+//     const matches = await Promise.all(
+//       roommate.matches.map((matchId) =>
+//         Apartment.findById(matchId).populate("questionnaire")
+//       )
+//     );
+
+//     const formattedMatches = matches
+//       .map((match) => {
+//         const compatibilityScore = calculateCompatibilityScore(
+//           roommate.questionnaire,
+//           match.questionnaire
+//         );
+//         const distance = calculateDistance(
+//           roommate.preferences?.location?.address?.coordinates,
+//           match.info?.location?.coordinates
+//         );
+
+//         return {
+//           match,
+//           matchInfo: {
+//             image: match.info?.images[0],
+//             score: compatibilityScore,
+//             title: `${match.info?.location.address.street}, ${match.info.location.address.city}`,
+//             subTitle: `${match.info?.financials?.rent}₪ /m`,
+//             distance,
+//           },
+//         };
+//       })
+//       .sort((a, b) => b.matchInfo.score - a.matchInfo.score);
+
+//     res.json(formattedMatches);
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ message: "Internal server error" });
+//   }
+// };
+
 exports.getMatches = async (req, res) => {
   try {
     const roommate = req.user;
+
+    // Process likes and create matches
+    await Promise.all(roommate.likes.map(async (like_id) => {
+      const apartment = await Apartment.findById(like_id);
+      if (apartment && apartment.likes.includes(roommate._id)) {
+        if (!roommate.matches.includes(like_id)) {
+          roommate.matches.push(like_id);
+        }
+        if (!apartment.matches.includes(roommate._id)) {
+          apartment.matches.push(roommate._id);
+          await apartment.save();
+        }
+      }
+    }));
+
+    // Save roommate after updating matches
+    await roommate.save();
+
+    // Fetch and format matches
     const matches = await Promise.all(
       roommate.matches.map((matchId) =>
         Apartment.findById(matchId).populate("questionnaire")
@@ -13,6 +72,7 @@ exports.getMatches = async (req, res) => {
     );
 
     const formattedMatches = matches
+      .filter(Boolean) // Remove any null values in case a match wasn't found
       .map((match) => {
         const compatibilityScore = calculateCompatibilityScore(
           roommate.questionnaire,
