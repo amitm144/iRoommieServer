@@ -178,14 +178,6 @@ exports.setRoommatePreferences = async (req, res) => {
       location = undefined,
     } = req.body;
 
-    // details = Object.keys(details)
-    // .filter((key) => details[key] === true)
-    // .reduce((acc, key) => {
-    //   acc[key] = true;
-    //   return acc;
-    // }, {});
-  
-  // Check if location address is empty or not properly defined
   if (!location.address || !location.address.street || !location.address.city) {
     location = undefined;
   }

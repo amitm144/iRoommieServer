@@ -82,9 +82,10 @@ exports.getSuggestions = async (req, res) => {
           !apartment.likes.includes(roommate._id) &&
           !apartment.matches.includes(roommate._id)
       )
-      // .filter((apartment) => {
-      //   matchesPreferences(apartment.preferences, roommate);
-      // })
+      .filter((roommate) => {
+        return matchesPreferences(apartment.preferences, roommate);
+      })
+  
       .map((roommate) => {
         const compatibilityScore = calculateCompatibilityScore(
           apartment.questionnaire,
@@ -102,7 +103,6 @@ exports.getSuggestions = async (req, res) => {
         };
       })
       .sort((a, b) => b.score - a.score);
-
     res.json(compatibleRoommates);
   } catch (err) {
     console.error(err);
@@ -147,16 +147,26 @@ exports.updateApartment = async (req, res) => {
 exports.setApartmentPreferences = async (req, res) => {
   try {
     const apartment = req.user;
-    const { ageRange, gender, occupations, sharedInterests } = req.body;
+    const apartmentId = apartment._id;
 
-    apartment.preferences = {
-      ageRange,
-      gender,
-      occupations,
-      sharedInterests,
-    };
+    let {
+      ageRange = [],
+      gender = undefined,
+      occupations = undefined,
+      sharedInterests = undefined,
+    } = req.body;
 
-    await apartment.save();
+    console.log(req.body);
+
+    const updatedApartment = await Apartment.findByIdAndUpdate(
+      apartmentId,
+      { preferences: { ageRange, gender, occupations, sharedInterests } },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedApartment) {
+      return res.status(404).json({ message: "Apartment not found" });
+    }
 
     res.status(200).json({
       message: "Apartment preferences updated successfully",
@@ -164,10 +174,9 @@ exports.setApartmentPreferences = async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Error updating apartment preferences" });
+    res.status(500).json({ message: "Error updating partment preferences" });
   }
 };
-
 exports.apartmentActions = async (req, res) => {
   try {
     const { targetId } = req.params;
@@ -208,3 +217,30 @@ exports.apartmentActions = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
+function matchesPreferences(apartmentPreferences, roommate) {
+
+  if (
+    roommate.personalInfo.age < apartmentPreferences.ageRange[0] ||
+    roommate.personalInfo.age > apartmentPreferences.ageRange[1]
+  ) {
+    console.log("age");
+    return false;
+  }
+
+  if (apartmentPreferences.gender.length > 0 && !apartmentPreferences.gender.includes(roommate.personalInfo.gender)) {
+    console.log(apartmentPreferences);
+    console.log(apartmentPreferences.gender);
+    console.log(roommate.personalInfo.gender);
+    return false;
+  }
+
+  if (apartmentPreferences.occupations.length > 0 && !apartmentPreferences.occupations.includes(roommate.personalInfo.occupation)) {
+    console.log(apartmentPreferences.occupations);
+    console.log(roommate.personalInfo.occupation);
+    return false;
+  }
+
+  
+  return true;
+}
